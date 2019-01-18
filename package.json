@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "github.com/smartprocure/recurly-client.git"
+    "url": "git+https://github.com/smartprocure/recurly-client.git"
   },
   "keywords": [
     "recurly"
