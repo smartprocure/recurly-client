@@ -548,7 +548,7 @@ client.invoicePendingCharges = _(createAggregateItemBlueprint)
 
 client.markInvoiceFailed = function(invoiceNumber, processData) {
   return requestBlueprint('invoices/' + invoiceNumber + '/mark_failed', { method: 'put' } , processData);
-}
+};
 
 //#endregion
 
