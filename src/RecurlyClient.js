@@ -37,14 +37,14 @@ var client = {
         return nextPage(parameters)
         .then(function processItem(page) {
             if(page.items.length > 0) {
-                var item = i < page.items.length ? page.items[i] : null;    
-                
+                var item = i < page.items.length ? page.items[i] : null;
+
                 if(!item && _(page).has('nextUri')) {
                     delete page.items;
                     parameters.page = page;
                     return client.processItems(parameters);
                 }
-                
+
                 if(item) {
                     item.next = function(cb) {
                         return Promise.try(function() {
@@ -56,7 +56,7 @@ var client = {
                             }
                         }).nodeify(cb);
                     };
-                    return Promise.resolve(item);   
+                    return Promise.resolve(item);
                 } else {
                     return Promise.resolve();
                 }
@@ -102,10 +102,10 @@ function baseCommand(parameters) {
             }
         }
     }
-    
+
     console.info(command.options.uri);
     command.execute = _(Promise.promisify(require('request'))).partial(command.options);
-    
+
     return command;
 }
 
@@ -172,7 +172,7 @@ function parseData(data) {
                                 } else {
                                     data[key] = parseData(propertyValue);
                                 }
-                            }   
+                            }
                         } else{
                             if(_(propertyValue).isString()){
                                 data[key] = propertyValue;
@@ -249,21 +249,21 @@ function nextPage(parameters){
     var command = baseCommand(parameters);
     return command.execute()
     .spread(function(response) {
-        var page = { 
+        var page = {
             size: parameters.page.size,
             totalRecords: response.headers['x-records'] ? parseInt(response.headers['x-records']) : 0,
             cancel: response.statusCode >= 400
         };
-           
+
         var nav = response.headers.link ? response.headers.link.split(',') : [];
         _(nav).each(function(link) {
             var uriProperty = link.indexOf('rel="next"') > 0 ? 'nextUri' : 'previousUri';
             page[uriProperty] = link.match(/<(.*?)>/)[1];
         });
-        
+
         var hasErrors = !validStatusCodes.contains(response.statusCode) || _(clientErrors).has(response.statusCode),
             content =  _(clientErrors).has(response.statusCode) ? clientErrors[response.statusCode] : response.body;
-        
+
         return parseXmlString(content)
         .bind(page)
         .then(function (parsedResult) {
@@ -301,18 +301,18 @@ var listBlueprint = function(route, parameters, processData) {
         processData = parameters;
         parameters = { page: { size: 200 } };
     }
-    
+
     if(processData && (typeof processData != 'function')) {
         throw new Error('Callback must be a function.');
     }
-    
+
     var processor = parameters.perPage ? client.processPages : client.processItems;
     parameters.route = route;
     parameters.options = parameters.options ? parameters.options : {};
     _(parameters.options).extend({
-        per_page: (parameters.page && 
+        per_page: (parameters.page &&
                    parameters.page.size ? parameters.page.size : 200) });
-    
+
     return processor(parameters)
     .nodeify(processData);
 };
@@ -545,6 +545,10 @@ client.getInvoicePDF = function(invoiceNumber, processData) {
 
 client.invoicePendingCharges = _(createAggregateItemBlueprint)
     .partial('accounts', 'invoice', 'invoices', 'account_code');
+
+client.markInvoiceFailed = function(invoiceNumber, processData) {
+  return requestBlueprint('invoices/' + invoiceNumber + '/mark_failed', { method: 'put' } , processData);
+};
 
 //#endregion
 
